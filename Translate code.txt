@@ -1,0 +1,89 @@
+!pip install gradio transformers sentencepiece
+
+import gradio as gr
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# Load one multilingual model
+model_name = "facebook/m2m100_418M"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+# Define available languages (code → readable name)
+lang_dict = {
+    "ar": "Arabic",
+    "cs": "Czech",
+    "de": "German",
+    "en": "English",
+    "es": "Spanish",
+    "et": "Estonian",
+    "fi": "Finnish",
+    "fr": "French",
+    "gu": "Gujarati",
+    "hi": "Hindi",
+    "it": "Italian",
+    "ja": "Japanese",
+    "kk": "Kazakh",
+    "ko": "Korean",
+    "lt": "Lithuanian",
+    "lv": "Latvian",
+    "my": "Burmese",
+    "ne": "Nepali",
+    "nl": "Dutch",
+    "ro": "Romanian",
+    "ru": "Russian",
+    "si": "Sinhala",
+    "tr": "Turkish",
+    "vi": "Vietnamese",
+    "zh": "Chinese",
+    "af": "Afrikaans",
+    "az": "Azerbaijani",
+    "bn": "Bengali",
+    "fa": "Persian",
+    "he": "Hebrew",
+    "hr": "Croatian",
+    "id": "Indonesian",
+    "ka": "Georgian",
+    "km": "Khmer",
+    "mk": "Macedonian",
+    "ml": "Malayalam",
+    "mn": "Mongolian",
+    "mr": "Marathi",
+    "pl": "Polish",
+    "ps": "Pashto",
+    "pt": "Portuguese",
+    "sv": "Swedish",
+    "sw": "Swahili",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "th": "Thai",
+    "tl": "Tagalog",
+    "uk": "Ukrainian",
+    "ur": "Urdu",
+    "xh": "Xhosa",
+    "gl": "Galician",
+    "sl": "Slovene"
+}
+
+# Translation function
+def translate_with_gradio(text, language_name):
+    lang_code = [code for code, name in lang_dict.items() if name == language_name][0]
+
+    tokenizer.src_lang = "en"
+    encoded = tokenizer(text, return_tensors="pt")
+    generated_tokens = model.generate(**encoded, forced_bos_token_id=tokenizer.get_lang_id(lang_code))
+    translated_text = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+    return translated_text
+
+# Gradio UI
+iface = gr.Interface(
+    fn=translate_with_gradio,
+    inputs=[
+        gr.Textbox(lines=5, label="Input English Text"),
+        gr.Dropdown(list(lang_dict.values()), label="Select Target Language")
+    ],
+    outputs="text",
+    title="Universal Multilingual Translator 🌍",
+    description="Translate English text into 50+ languages using facebook/m2m100."
+)
+
+iface.launch()
